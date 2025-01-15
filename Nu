@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+if [ $# -ne 4 ]; then
+        # Print usage
+        echo 'Nu, by Josh Cox 2017.01.15
+  usage: Nu SERVERNAME USERNAME IPADDRESS|HOSTNAME PORT
+  This script creates a directory full of servernames which can be invoked to easily ssh into the server
+  or just to invoke a short command on the server
+  e.g.
+  Nu Saruman root 65.67.51.189 2222
+
+  extended usage examples:
+  Saruman 'uname -a'>helloworld
+  tar zcf - helloworld|Saruman 'zxvf -'
+  Saruman 'tar jcf - helloworld'|tar zxvf -
+        '
+            exit 1
+fi
+
+SERVERNAME=$1
+USERNAME=$2
+HOST=$3
+PORT=$4
+
+echo "
+my Name is $SERVERNAME, my port is $PORT, and my IP address is $HOST
+your username is $USERNAME
+I will now complete these commands:
+mkdir /mnt/$SERVERNAME
+and make these scripts
+~/bin/$SERVERNAME
+~/bin/Mount$SERVERNAME
+"
+
+mkdir -p ~/bin
+mkdir -p ~/mnt/$SERVERNAME
+echo "#!/usr/bin/env bash
+sshfs -p $PORT $USERNAME@$HOST:/ ~/mnt/$SERVERNAME
+">~/bin/Mount$SERVERNAME
+chmod +x ~/bin/Mount$SERVERNAME
+echo "#!/usr/bin/env bash
+ssh -A -X -p $PORT $USERNAME@$HOST \$@
+">~/bin/$SERVERNAME
+chmod +x ~/bin/$SERVERNAME
