@@ -95,10 +95,16 @@ Saruman 'tar jcf - helloworld' | tar zxvf -
    - `sshfs` (for mounting remote directories).
    - `bash` (required for script execution).
 
-3. **Make the script executable**:
-   ```bash
-   chmod +x Nu
-   ```
+3. **Install using autotools**:
+```bash
+aclocal
+autoconf
+automake --add-missing
+./configure
+sudo make install
+```
+
+or use [./build.sh](./build.sh) to do the same thing.
 
 ---
 
