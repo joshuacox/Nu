@@ -12,6 +12,7 @@ if [ $# -ne 4 ]; then
   Saruman 'uname -a'>helloworld
   tar zcf - helloworld|Saruman 'zxvf -'
   Saruman 'tar jcf - helloworld'|tar zxvf -
+  Saruman ping
         '
             exit 1
 fi
@@ -32,12 +33,30 @@ and make these scripts
 "
 
 mkdir -p ~/bin
+
+cat <<EOF > ~/bin/Mount$SERVERNAME
+#!/usr/bin/env bash
 mkdir -p ~/mnt/$SERVERNAME
-echo "#!/usr/bin/env bash
 sshfs -p $PORT $USERNAME@$HOST:/ ~/mnt/$SERVERNAME
-">~/bin/Mount$SERVERNAME
+EOF
+
 chmod +x ~/bin/Mount$SERVERNAME
-echo "#!/usr/bin/env bash
-ssh -A -X -p $PORT $USERNAME@$HOST \$@
-">~/bin/$SERVERNAME
+
+cat <<EOF > ~/bin/$SERVERNAME
+#!/usr/bin/env bash
+if [[ \$1 == 'ping' ]]; then
+  ping $HOST
+elif [[ \$1 == 'help' ]]; then
+  echo "
+  extended usage examples:
+  $SERVERNAME 'uname -a'>helloworld
+  tar zcf - helloworld|$SERVERNAME 'zxvf -'
+  $SERVERNAME 'tar jcf - helloworld'|tar zxvf -
+  $SERVERNAME ping
+  "
+else
+  ssh -A -X -p $PORT $USERNAME@$HOST \$@
+fi
+EOF
+
 chmod +x ~/bin/$SERVERNAME
