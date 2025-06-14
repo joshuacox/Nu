@@ -1,6 +1,8 @@
 # Nu - Server Connection Manager
 
-Nu is a bash script by Josh Cox (2017.01.15) that simplifies SSH connections and file mounting to remote servers. It generates executable scripts for quick access to servers using custom names, allowing users to easily SSH into servers, mount remote directories, or execute commands remotely with advanced patterns like command chaining and file transfer.
+Nu is a bash script by Josh Cox that makes a named exectuable for servers you interact with often, simplifies SSH connections and file mounting to remote servers. 
+It generates executable scripts for quick access to servers using custom names, allowing users to easily SSH into servers, mount remote directories,
+or execute commands remotely with advanced patterns like command chaining and file transfer.
 
 ---
 
@@ -29,3 +31,16 @@ When you run `Nu SERVERNAME USERNAME IPADDRESS PORT`, the script:
 
 ## Usage
 
+```
+Nu SERVERNAME USERNAME IPADDRESS|HOSTNAME PORT
+```
+
+This script creates a directory full of servernames which can be invoked to easily ssh into the server
+or just to invoke a short command on the server
+e.g.
+Nu Saruman root 65.67.51.189 2222
+
+extended usage examples:
+Saruman 'uname -a'>helloworld
+tar zcf - helloworld|Saruman 'zxvf -'
+Saruman 'tar jcf - helloworld'|tar zxvf -
