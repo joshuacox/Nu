@@ -4,6 +4,14 @@
 
 With Nu, you can instantly SSH into servers, mount remote directories locally, or execute advanced workflows like command chaining and file transfers—all with intuitive, user-defined names.
 
+### oneliner install
+
+```
+curl -sL https://raw.githubusercontent.com/joshuacox/Nu/refs/heads/main/bootstrapNu.sh | bash
+```
+
+or read the installation section below for full details
+
 ---
 
 ## 🌟 Features
