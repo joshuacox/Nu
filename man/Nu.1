@@ -1,0 +1,149 @@
+.TH NU 1 "November 2025" "1.0" "Nu Manual"
+.SH NAME
+Nu \- lightweight Bash script that creates shortcuts for SSH, SSHFS mounting, and remote command execution.
+.SH SYNOPSIS
+.B Nu
+.I SERVERNAME USERNAME IPADDRESS|HOSTNAME PORT
+.SH DESCRIPTION
+The
+.B Nu
+script simplifies frequent interactions with remote servers. It creates a dedicated mount point under
+.I ~/mnt/
+and generates two executable helper scripts in
+.I ~/bin/ :
+
+.TP
+\fBSERVERNAME\fR
+A shortcut for an SSH connection with agent forwarding (\-A) and X11 forwarding (\-X).  The script also forwards any additional arguments to the remote shell.
+
+.TP
+\fBMountSERVERNAME\fR
+A script that mounts the remote server's home directory locally using
+.BR sshfs (1)
+so that files can be accessed as if they were on the local filesystem.
+
+The generated scripts enable advanced workflows such as command chaining, piping, and file transfers without needing to type full SSH commands each time.
+
+.SH USAGE
+.TP
+.B Nu SERVERNAME USERNAME IPADDRESS PORT
+Creates the mount point and helper scripts for the specified server.
+
+Example:
+.IP
+.EX
+Nu Saruman root 65.67.51.189 2222
+.EE
+
+After running the command the following scripts are available:
+
+.IP
+.EX
+~/bin/Saruman          # SSH shortcut
+~/bin/MountSaruman     # SSHFS mount script
+.EE
+
+.TP
+.B Saruman [command]
+SSH into the server.  If a command is supplied it is executed remotely; otherwise an interactive shell is opened.
+
+Example:
+.IP
+.EX
+Saruman 'uname -a'
+.EE
+
+.TP
+.B MountSaruman
+Mounts the remote home directory at
+.I ~/mnt/Saruman
+using
+.BR sshfs (1).
+
+.TP
+.B Saruman ping
+Runs a simple
+.BR ping (8)
+test against the remote host.
+
+.TP
+.B Saruman help
+Displays extended usage examples embedded in the generated script.
+
+.SH EXAMPLES
+.IP "1." 4
+Create shortcuts for a server called
+.B Saruman
+running on port 2222:
+.IP
+.EX
+Nu Saruman root 65.67.51.189 2222
+.EE
+
+.IP "2." 4
+SSH into the server:
+.IP
+.EX
+Saruman
+.EE
+
+.IP "3." 4
+Mount the remote home directory locally:
+.IP
+.EX
+MountSaruman
+.EE
+
+.IP "4." 4
+Execute a remote command and capture its output:
+.IP
+.EX
+Saruman 'uname -a' > system_info.txt
+.EE
+
+.IP "5." 4
+Transfer files via a pipe:
+.IP
+.EX
+tar zcf - helloworld | Saruman 'zxvf -'
+.EE
+
+.IP "6." 4
+Stream data from the remote server:
+.IP
+.EX
+Saruman 'tar jcf - helloworld' | tar zxvf -
+.EE
+
+.SH FILES
+.TP
+.I ~/bin/SERVERNAME
+Executable SSH shortcut script.
+.TP
+.I ~/bin/MountSERVERNAME
+Executable SSHFS mount script.
+.TP
+.I ~/mnt/SERVERNAME
+Mount point for the remote home directory.
+
+.SH DEPENDENCIES
+.BR ssh (1),
+.BR sshfs (1),
+.BR bash (1)
+
+Ensure that
+.I ~/bin
+is in your
+.B $PATH
+so that the generated scripts can be invoked directly.
+
+.SH AUTHOR
+Josh Cox <josh.cox@example.com>
+
+.SH LICENSE
+This software is released under the terms of the LICENSE file included with the project.
+
+.SH SEE ALSO
+.BR ssh (1),
+.BR sshfs (1),
+.BR bash (1)
