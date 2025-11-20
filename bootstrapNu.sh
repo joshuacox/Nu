@@ -12,6 +12,7 @@ cd $TMP_DIR
 curl -L -o ${THIS_NAME}-${THIS_BRANCH}.zip https://github.com/${THIS_GH}/${THIS_NAME}/archive/refs/heads/${THIS_BRANCH}.zip
 unzip ${THIS_NAME}-${THIS_BRANCH}.zip
 cd ${THIS_NAME}-${THIS_BRANCH}
+./configure
 make
 sudo make install
 cd
