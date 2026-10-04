@@ -1,62 +1,221 @@
 #!/usr/bin/env bash
-if [ $# -ne 4 ]; then
-        # Print usage
-        echo 'Nu, by Josh Cox 2017.01.15
-  usage: Nu SERVERNAME USERNAME IPADDRESS|HOSTNAME PORT
-  This script creates a directory full of servernames which can be invoked to easily ssh into the server
-  or just to invoke a short command on the server
-  e.g.
-  Nu Saruman root 65.67.51.189 2222
+set -e
 
-  extended usage examples:
-  Saruman 'uname -a'>helloworld
-  tar zcf - helloworld|Saruman 'zxvf -'
-  Saruman 'tar jcf - helloworld'|tar zxvf -
-  Saruman ping
-        '
-            exit 1
+print_usage() {
+  cat <<'EOF'
+Nu, by Josh Cox 2017.01.15
+  usage: Nu [-f|--force] SERVERNAME USERNAME IPADDRESS|HOSTNAME [PORT] [REMOTE_PATH]
+  This script creates server shortcut commands to easily SSH into a server,
+  mount its filesystem locally via SSHFS, or unmount it.
+
+  Arguments:
+    SERVERNAME   A memorable alias for the server (e.g., Saruman)
+    USERNAME     Remote SSH user (e.g., root)
+    HOST         Remote IP address or hostname (e.g., 192.168.1.10)
+    PORT         SSH port (optional, defaults to 22)
+    REMOTE_PATH  Remote directory path to mount (optional, defaults to /)
+
+  Options:
+    -f, --force  Overwrite existing shortcut scripts without confirmation
+
+  Examples:
+    Nu Saruman root 65.67.51.189 2222
+    Nu webserver deploy 10.0.0.5 22 /var/www
+
+  Generated Shortcuts:
+    ~/bin/<SERVERNAME>          SSH connection and remote command shortcut
+    ~/bin/Mount<SERVERNAME>     Mount remote directory via SSHFS to ~/mnt/<SERVERNAME>
+    ~/bin/Unmount<SERVERNAME>   Unmount remote directory cleanly
+
+  Extended Usage:
+    Saruman 'uname -a' > helloworld
+    tar zcf - helloworld | Saruman 'zxvf -'
+    Saruman 'tar jcf - helloworld' | tar zxvf -
+    Saruman ping
+    Saruman mount
+    Saruman unmount
+EOF
+}
+
+FORCE=0
+POSITIONAL=()
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -h|--help)
+      print_usage
+      exit 0
+      ;;
+    -f|--force)
+      FORCE=1
+      shift
+      ;;
+    *)
+      POSITIONAL+=("$1")
+      shift
+      ;;
+  esac
+done
+
+if [[ ${#POSITIONAL[@]} -lt 3 || ${#POSITIONAL[@]} -gt 5 ]]; then
+  print_usage
+  exit 1
 fi
 
-SERVERNAME=$1
-USERNAME=$2
-HOST=$3
-PORT=$4
+SERVERNAME="${POSITIONAL[0]}"
+USERNAME="${POSITIONAL[1]}"
+HOST="${POSITIONAL[2]}"
+PORT="${POSITIONAL[3]:-22}"
+REMOTE_PATH="${POSITIONAL[4]:-/}"
+
+BIN_DIR="$HOME/bin"
+MNT_DIR="$HOME/mnt/$SERVERNAME"
+
+SSH_SCRIPT="$BIN_DIR/$SERVERNAME"
+MOUNT_SCRIPT="$BIN_DIR/Mount$SERVERNAME"
+UNMOUNT_SCRIPT="$BIN_DIR/Unmount$SERVERNAME"
+
+# Check for existing scripts and guard against accidental overwrite
+if [[ $FORCE -eq 0 ]]; then
+  EXISTING=()
+  [[ -e "$SSH_SCRIPT" ]] && EXISTING+=("$SSH_SCRIPT")
+  [[ -e "$MOUNT_SCRIPT" ]] && EXISTING+=("$MOUNT_SCRIPT")
+  [[ -e "$UNMOUNT_SCRIPT" ]] && EXISTING+=("$UNMOUNT_SCRIPT")
+
+  if [[ ${#EXISTING[@]} -gt 0 ]]; then
+    echo "Warning: The following shortcut files already exist:"
+    for file in "${EXISTING[@]}"; do
+      echo "  - $file"
+    done
+    if [[ -t 0 ]]; then
+      read -r -p "Overwrite existing shortcut scripts? [y/N] " response
+      case "$response" in
+        [yY][eE][sS]|[yY])
+          ;;
+        *)
+          echo "Aborting without modifying existing scripts."
+          exit 1
+          ;;
+      esac
+    else
+      echo "Non-interactive shell detected. Use -f or --force to overwrite existing scripts."
+      exit 1
+    fi
+  fi
+fi
 
 echo "
-my Name is $SERVERNAME, my port is $PORT, and my IP address is $HOST
-your username is $USERNAME
-I will now complete these commands:
-mkdir /mnt/$SERVERNAME
-and make these scripts
-~/bin/$SERVERNAME
-~/bin/Mount$SERVERNAME
+Configuring shortcuts for $SERVERNAME:
+  Remote Host: $HOST
+  Port:        $PORT
+  Username:    $USERNAME
+  Remote Path: $REMOTE_PATH
+  Mount Point: $MNT_DIR
+
+Creating shortcuts in $BIN_DIR:
+  - $SSH_SCRIPT
+  - $MOUNT_SCRIPT
+  - $UNMOUNT_SCRIPT
 "
 
-mkdir -p ~/bin
+mkdir -p "$BIN_DIR"
+mkdir -p "$MNT_DIR"
 
-cat <<EOF > ~/bin/Mount$SERVERNAME
+# Generate Mount script
+cat <<EOF > "$MOUNT_SCRIPT"
 #!/usr/bin/env bash
-mkdir -p ~/mnt/$SERVERNAME
-sshfs -p $PORT $USERNAME@$HOST:/ ~/mnt/$SERVERNAME
+set -e
+
+if ! command -v sshfs >/dev/null 2>&1; then
+  echo "Error: sshfs is not installed. Please install it with your system package manager." >&2
+  exit 1
+fi
+
+mkdir -p "$MNT_DIR"
+
+if mountpoint -q "$MNT_DIR" 2>/dev/null; then
+  echo "$MNT_DIR is already mounted."
+  exit 0
+fi
+
+echo "Mounting $USERNAME@$HOST:$REMOTE_PATH to $MNT_DIR ..."
+sshfs -p $PORT "$USERNAME@$HOST:$REMOTE_PATH" "$MNT_DIR"
+echo "Mounted successfully at $MNT_DIR"
 EOF
 
-chmod +x ~/bin/Mount$SERVERNAME
+chmod +x "$MOUNT_SCRIPT"
 
-cat <<EOF > ~/bin/$SERVERNAME
+# Generate Unmount script
+cat <<EOF > "$UNMOUNT_SCRIPT"
 #!/usr/bin/env bash
-if [[ \$1 == 'ping' ]]; then
-  ping $HOST
-elif [[ \$1 == 'help' ]]; then
-  echo "
-  extended usage examples:
-  $SERVERNAME 'uname -a'>helloworld
-  tar zcf - helloworld|$SERVERNAME 'zxvf -'
-  $SERVERNAME 'tar jcf - helloworld'|tar zxvf -
-  $SERVERNAME ping
-  "
+
+TARGET="$MNT_DIR"
+
+if ! mountpoint -q "\$TARGET" 2>/dev/null; then
+  echo "\$TARGET is not currently mounted."
+  exit 0
+fi
+
+echo "Unmounting \$TARGET ..."
+if command -v fusermount3 >/dev/null 2>&1; then
+  fusermount3 -u "\$TARGET"
+elif command -v fusermount >/dev/null 2>&1; then
+  fusermount -u "\$TARGET"
 else
-  ssh -A -X -p $PORT $USERNAME@$HOST \$@
+  umount "\$TARGET"
+fi
+
+if ! mountpoint -q "\$TARGET" 2>/dev/null; then
+  echo "Unmounted \$TARGET successfully."
+else
+  echo "Failed to unmount \$TARGET. It may still be in use." >&2
+  exit 1
 fi
 EOF
 
-chmod +x ~/bin/$SERVERNAME
+chmod +x "$UNMOUNT_SCRIPT"
+
+# Generate main SSH / command runner script
+cat <<EOF > "$SSH_SCRIPT"
+#!/usr/bin/env bash
+
+if [[ \$# -gt 0 ]]; then
+  case "\$1" in
+    ping)
+      ping "$HOST"
+      exit \$?
+      ;;
+    mount)
+      "$MOUNT_SCRIPT"
+      exit \$?
+      ;;
+    unmount)
+      "$UNMOUNT_SCRIPT"
+      exit \$?
+      ;;
+    help|--help|-h)
+      echo "
+Usage: $SERVERNAME [command]
+  When called without arguments, connects via SSH.
+  Built-in subcommands:
+    ping     Check remote host reachability
+    mount    Mount remote filesystem locally
+    unmount  Unmount remote filesystem
+    help     Display this help message
+
+  Extended workflow examples:
+    $SERVERNAME 'uname -a' > helloworld
+    tar zcf - helloworld | $SERVERNAME 'zxvf -'
+    $SERVERNAME 'tar jcf - helloworld' | tar zxvf -
+"
+      exit 0
+      ;;
+  esac
+fi
+
+ssh -A -X -p $PORT "$USERNAME@$HOST" "\$@"
+EOF
+
+chmod +x "$SSH_SCRIPT"
+
+echo "Setup completed for $SERVERNAME."

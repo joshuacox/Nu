@@ -1,0 +1,85 @@
+name: CI & Code Quality
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  shell-lint-and-test:
+    name: ShellCheck & Dry-Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Syntax check bash scripts
+        run: |
+          bash -n Nu
+          bash -n bootstrapNu.sh
+
+      - name: Run ShellCheck
+        uses: ludeeus/action-shellcheck@master
+        with:
+          scandir: '.'
+          ignore_paths: 'docs-site'
+
+      - name: Dry-run functional test of Nu
+        run: |
+          mkdir -p "$HOME/bin" "$HOME/mnt"
+          export PATH="$HOME/bin:$PATH"
+
+          # Execute Nu with force flag and custom port/path
+          ./Nu -f CIBox ciuser 127.0.0.1 2222 /tmp/cidir
+
+          # Assert scripts were generated and marked executable
+          test -x "$HOME/bin/CIBox"
+          test -x "$HOME/bin/MountCIBox"
+          test -x "$HOME/bin/UnmountCIBox"
+
+          # Verify syntax of all generated scripts
+          bash -n "$HOME/bin/CIBox"
+          bash -n "$HOME/bin/MountCIBox"
+          bash -n "$HOME/bin/UnmountCIBox"
+
+          # Verify content interpolation
+          grep -q "2222" "$HOME/bin/CIBox"
+          grep -q "ciuser@127.0.0.1" "$HOME/bin/CIBox"
+          grep -q "/tmp/cidir" "$HOME/bin/MountCIBox"
+          grep -q "CIBox" "$HOME/bin/UnmountCIBox"
+
+          echo "Dry-run tests passed successfully."
+
+  docs-build:
+    name: Next.js Docs Build Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: docs-site/package-lock.json
+
+      - name: Install dependencies
+        working-directory: docs-site
+        run: npm ci
+
+      - name: Build Next.js static export
+        working-directory: docs-site
+        run: npm run build
+
+      - name: Verify ads.txt & static files exist in export
+        working-directory: docs-site
+        run: |
+          test -f out/ads.txt
+          test -f out/robots.txt
+          test -f out/sitemap.xml
+          test -f out/privacy.html
+          test -f out/terms.html
+          grep -q "pub-8973108060277483" out/ads.txt
+          echo "Static export verification passed."

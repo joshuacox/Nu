@@ -1,3 +1,5 @@
+import CommandGenerator from "../components/CommandGenerator";
+
 export default function HomePage() {
   return (
     <div className="container">
@@ -6,19 +8,22 @@ export default function HomePage() {
         <h1>Nu: Server Connection Manager</h1>
         <p>
           A lightweight, POSIX-compatible tool that simplifies frequent remote server interactions
-          by creating executable shortcuts for SSH, SSHFS mounting, and remote command pipelines.
+          by creating executable shortcuts for SSH, SSHFS mounting, clean unmounting, and remote command pipelines.
         </p>
         <div className="cta-group">
-          <a href="#quickstart" className="btn btn-primary">
+          <a href="#generator" className="btn btn-primary">
+            Launch Generator
+          </a>
+          <a href="#quickstart" className="btn btn-secondary">
             Quick Start
           </a>
           <a href="#documentation" className="btn btn-secondary">
-            Read Documentation
+            Documentation
           </a>
         </div>
       </section>
 
-      {/* AdSense Unit Slot (Placeholder / Responsive Ad Unit) */}
+      {/* AdSense Unit Slot (Responsive Display Ad) */}
       <div className="adsense-container">
         <div className="adsense-label">Advertisement</div>
         <ins
@@ -30,6 +35,11 @@ export default function HomePage() {
           data-full-width-responsive="true"
         />
       </div>
+
+      {/* Interactive Command & Script Generator */}
+      <section id="generator" className="section">
+        <CommandGenerator />
+      </section>
 
       {/* Key Features Grid */}
       <section className="section">
@@ -50,6 +60,13 @@ export default function HomePage() {
             </p>
           </div>
           <div className="card">
+            <h3>🛑 Clean Unmounting Helper</h3>
+            <p>
+              Generates an <code>Unmount&lt;Server&gt;</code> script that safely detaches FUSE mountpoints
+              using <code>fusermount3</code>, <code>fusermount</code>, or <code>umount</code>.
+            </p>
+          </div>
+          <div className="card">
             <h3>🔄 Stream &amp; Command Chaining</h3>
             <p>
               Execute remote commands or stream data across SSH tunnels with piped tools like <code>tar</code>,
@@ -57,10 +74,16 @@ export default function HomePage() {
             </p>
           </div>
           <div className="card">
-            <h3>🪶 Zero Heavy Dependencies</h3>
+            <h3>🎛️ Built-in Subcommands</h3>
             <p>
-              Crafted in clean, POSIX-compatible Bash. Only requires standard system utilities (<code>bash</code>,
-              <code>ssh</code>, and <code>sshfs</code>).
+              Quickly test host connectivity or mount states directly via <code>&lt;Server&gt; ping</code>,
+              <code>&lt;Server&gt; mount</code>, and <code>&lt;Server&gt; unmount</code>.
+            </p>
+          </div>
+          <div className="card">
+            <h3>🛡️ Defensive Scripting</h3>
+            <p>
+              Built-in guards prevent accidental overwrites of existing user scripts unless <code>--force</code> is passed.
             </p>
           </div>
         </div>
@@ -98,10 +121,10 @@ cd Nu
 
         <h3>1. Registering a Remote Server</h3>
         <p>
-          Syntax: <code>Nu SERVERNAME USERNAME IPADDRESS|HOSTNAME PORT</code>
+          Syntax: <code>Nu [-f|--force] SERVERNAME USERNAME IPADDRESS|HOSTNAME [PORT] [REMOTE_PATH]</code>
         </p>
         <pre>
-          <code>Nu Saruman root 65.67.51.189 2222</code>
+          <code>Nu Saruman root 65.67.51.189 2222 /</code>
         </pre>
         <p>
           When executed, Nu automatically creates:
@@ -110,18 +133,27 @@ cd Nu
           <li>A dedicated mount directory: <code>~/mnt/Saruman</code></li>
           <li>An SSH shortcut script: <code>~/bin/Saruman</code></li>
           <li>An SSHFS mount shortcut: <code>~/bin/MountSaruman</code></li>
+          <li>A safe unmount shortcut: <code>~/bin/UnmountSaruman</code></li>
         </ul>
 
         <h3 style={{ marginTop: "2rem" }}>2. Connecting via SSH</h3>
-        <p>Simply call the server name directly from anywhere in your terminal:</p>
+        <p>Simply call the server alias directly from anywhere in your terminal:</p>
         <pre>
           <code>Saruman</code>
         </pre>
 
-        <h3 style={{ marginTop: "2rem" }}>3. Mounting the Remote Filesystem</h3>
-        <p>Mount the entire remote root to your local <code>~/mnt/Saruman</code> directory:</p>
+        <h3 style={{ marginTop: "2rem" }}>3. Mounting &amp; Unmounting the Remote Filesystem</h3>
+        <p>Mount the remote directory to your local <code>~/mnt/Saruman</code> directory:</p>
         <pre>
-          <code>MountSaruman</code>
+          <code>MountSaruman
+# or via subcommand:
+Saruman mount</code>
+        </pre>
+        <p style={{ marginTop: "0.75rem" }}>When finished, unmount safely:</p>
+        <pre>
+          <code>UnmountSaruman
+# or via subcommand:
+Saruman unmount</code>
         </pre>
 
         <h3 style={{ marginTop: "2rem" }}>4. Advanced Remote Piping &amp; Workflows</h3>
@@ -154,7 +186,7 @@ Saruman ping`}</code>
         />
       </div>
 
-      {/* Monitization & Ads Verification */}
+      {/* Monetization & Ads Verification */}
       <section className="section">
         <h2 className="section-title">🛡️ AdSense &amp; Publisher Verification</h2>
         <p>
