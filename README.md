@@ -125,16 +125,12 @@ Saruman 'tar jcf - helloworld' | tar zxvf -
    - `ssh` (OpenSSH client).
    - `bash` (required for script execution).
 
-3. **Install using autotools**:
+3. **Install using CMake**:
 ```bash
-aclocal
-autoconf
-automake --add-missing
-./configure
+cmake .
+make
 sudo make install
 ```
-
-or use [./build.sh](./build.sh) to do the same thing.
 
 ---
 

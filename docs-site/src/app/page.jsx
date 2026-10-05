@@ -97,15 +97,17 @@ export default function HomePage() {
           <code>curl -sL https://raw.githubusercontent.com/joshuacox/Nu/refs/heads/main/bootstrapNu.sh | bash</code>
         </pre>
 
-        <h3 style={{ marginTop: "1.5rem", marginBottom: "0.75rem" }}>Building from Source</h3>
-        <p>Ensure autotools and dependencies are installed, then run:</p>
+        <h3 style={{ marginTop: "1.5rem", marginBottom: "0.75rem" }}>Building from Source (CMake)</h3>
+        <p>Ensure CMake, make, and OpenSSH are installed, then run:</p>
         <pre>
           <code>{`# Clone the repository
 git clone https://github.com/joshuacox/Nu.git
 cd Nu
 
-# Run the automated build & install
-./build.sh`}</code>
+# Build and install system-wide via CMake
+cmake .
+make
+sudo make install`}</code>
         </pre>
         <p style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>
           Make sure <code>~/bin</code> is added to your shell&apos;s <code>$PATH</code>:
@@ -171,6 +173,23 @@ Saruman 'tar jcf - helloworld' | tar zxvf -
 # Ping remote host quickly
 Saruman ping`}</code>
         </pre>
+      </section>
+
+      {/* Advanced Recipes & Guides */}
+      <section className="section">
+        <h2 className="section-title">💡 Practical Recipes &amp; Workflows</h2>
+        <div className="grid">
+          <div className="card">
+            <h3>🗜️ Remote Database Backup Pipe</h3>
+            <p style={{ marginBottom: "0.5rem" }}>Stream a database dump directly from remote to local without saving to remote disk:</p>
+            <pre><code>Saruman &apos;mysqldump -u dbuser -p mydb | gzip -9&apos; &gt; backup.sql.gz</code></pre>
+          </div>
+          <div className="card">
+            <h3>⚡ Fast File Syncing via Rsync</h3>
+            <p style={{ marginBottom: "0.5rem" }}>Use your mount directory or run rsync directly over the configured port:</p>
+            <pre><code>rsync -avz -e &apos;ssh -p 2222&apos; ./build/ root@65.67.51.189:/var/www/</code></pre>
+          </div>
+        </div>
       </section>
 
       {/* In-content AdSense Unit Slot */}
